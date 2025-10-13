@@ -11,6 +11,7 @@ import SwiftUI
 struct TimerScreen: View {
     @StateObject private var viewModel: TimerViewModel
     @State private var showSettings = false
+    @State private var showFlowEditor = false
 
     init(viewModel: TimerViewModel) {
         _viewModel = StateObject(wrappedValue: viewModel)
@@ -71,12 +72,29 @@ struct TimerScreen: View {
                 )
                 .padding(.bottom, 20)
 
-                // Rest mode selector (always available for upcoming rest)
-                RestModeSelector(
-                    currentMode: viewModel.timerEngine.timerSettings.autoRestMode
-                ) { mode in
-                    viewModel.updateRestMode(mode)
+                VStack(alignment: .leading, spacing: 12) {
+                    HStack {
+                        Text("自訂流程")
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundColor(Color("TextDark"))
+
+                        Spacer()
+
+                        Button(action: { showFlowEditor = true }) {
+                            Text("編輯")
+                                .font(.system(size: 14, weight: .medium))
+                                .foregroundColor(Color("PrimaryRed"))
+                        }
+                    }
+
+                    FlowTimelineView(
+                        flow: viewModel.flowConfiguration,
+                        activeStepID: viewModel.activeFlowStepID
+                    )
                 }
+                .padding(16)
+                .background(Color("SecondaryGray"))
+                .cornerRadius(16)
                 .padding(.horizontal, 20)
 
                 Spacer()
@@ -85,6 +103,17 @@ struct TimerScreen: View {
         }
         .sheet(isPresented: $showSettings) {
             SettingsView(viewModel: viewModel)
+        }
+        .sheet(isPresented: $showFlowEditor) {
+            FlowEditorView(
+                flow: viewModel.flowConfiguration,
+                defaultFocusDuration: viewModel.timerEngine.timerSettings.focusDuration,
+                defaultShortBreakDuration: viewModel.timerEngine.timerSettings.shortBreakDuration,
+                defaultLongBreakDuration: viewModel.timerEngine.timerSettings.longBreakDuration,
+                onSave: { newFlow in
+                    viewModel.applyFlowConfiguration(newFlow)
+                }
+            )
         }
         .onAppear {
             viewModel.setup()
@@ -106,7 +135,8 @@ struct TimerScreen: View {
         }
 
         let remainingSeconds = TimeInterval(minutes * 60 + seconds)
-        let totalSeconds = viewModel.timerEngine.timerSettings.duration(for: viewModel.currentMode)
+        let totalSeconds = viewModel.timerEngine.currentData.totalDuration
+        guard totalSeconds > 0 else { return 1.0 }
 
         // Progress is how much time has elapsed (1.0 = full, 0.0 = empty)
         return remainingSeconds / totalSeconds

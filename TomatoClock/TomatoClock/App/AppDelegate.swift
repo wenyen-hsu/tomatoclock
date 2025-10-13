@@ -20,8 +20,15 @@ class AppDelegate: NSObject, UIApplicationDelegate {
         Task {
             let settings = await UNUserNotificationCenter.current().notificationSettings()
             if settings.authorizationStatus == .notDetermined {
-                try? await UNUserNotificationCenter.current()
-                    .requestAuthorization(options: [.alert, .sound, .badge])
+                do {
+                    let granted = try await UNUserNotificationCenter.current()
+                        .requestAuthorization(options: [.alert, .sound, .badge])
+                    if !granted {
+                        print("Notification authorization denied by user")
+                    }
+                } catch {
+                    print("Failed to request notification authorization: \(error)")
+                }
             }
         }
 

@@ -95,11 +95,23 @@ struct SettingsView: View {
     }
 
     private func saveSettings() {
+        let focusSeconds = TimeInterval(focusMinutes * 60)
+        let shortBreakSeconds = TimeInterval(shortBreakMinutes * 60)
+        let longBreakSeconds = TimeInterval(longBreakMinutes * 60)
+
+        var updatedFlow = viewModel.timerEngine.timerSettings.flow
+        updatedFlow.applyBaseDurations(
+            focusDuration: focusSeconds,
+            shortBreakDuration: shortBreakSeconds,
+            longBreakDuration: longBreakSeconds
+        )
+
         let newSettings = TimerSettings(
-            focusDuration: TimeInterval(focusMinutes * 60),
-            shortBreakDuration: TimeInterval(shortBreakMinutes * 60),
-            longBreakDuration: TimeInterval(longBreakMinutes * 60),
-            autoRestMode: viewModel.timerEngine.timerSettings.autoRestMode // Keep existing rest mode
+            focusDuration: focusSeconds,
+            shortBreakDuration: shortBreakSeconds,
+            longBreakDuration: longBreakSeconds,
+            autoRestMode: viewModel.timerEngine.timerSettings.autoRestMode,
+            flow: updatedFlow
         )
 
         viewModel.updateTimerSettings(newSettings)

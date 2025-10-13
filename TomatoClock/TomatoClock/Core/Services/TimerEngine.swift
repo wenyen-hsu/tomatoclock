@@ -40,6 +40,12 @@ class TimerEngine: TimerEngineProtocol {
     // User-configurable timer durations
     private(set) var timerSettings: TimerSettings
 
+    // Flattened steps derived from the configured flow.
+    private var flowSteps: [TimerSequenceStep]
+
+    // Current index inside the repeating flow sequence.
+    private var currentStepIndex: Int
+
     // Live Activity tracking
     @available(iOS 16.1, *)
     private var currentActivity: Activity<TimerActivityAttributes>?
@@ -55,21 +61,39 @@ class TimerEngine: TimerEngineProtocol {
         self.notifications = notifications
         self.sessionManager = sessionManager
 
-        // Load timer settings or use default
-        self.timerSettings = persistence.loadTimerSettings() ?? .default
+        // Load timer settings or use default and guarantee a valid flow sequence
+        var loadedSettings = persistence.loadTimerSettings() ?? .default
+        loadedSettings.flow.ensureMinimumCycle()
+        loadedSettings.alignBaseDurationsWithFlow()
 
-        let focusDuration = timerSettings.duration(for: .focus)
+        var normalizedSettings = loadedSettings
+        var preparedSteps = normalizedSettings.flow.steps
+        if preparedSteps.isEmpty {
+            let fallbackCycle = FocusCycleConfiguration(focusDuration: normalizedSettings.focusDuration)
+            normalizedSettings.flow = TimerFlowConfiguration(cycles: [fallbackCycle])
+            preparedSteps = normalizedSettings.flow.steps
+        }
 
-        // Initialize with default data using custom duration
+        self.timerSettings = normalizedSettings
+        self.flowSteps = preparedSteps
+        self.currentStepIndex = 0
+
+        let initialStep = preparedSteps[currentStepIndex]
+
+        // Initialize with default data using the first step's duration
         self.currentData = TimerData(
-            mode: .focus,
+            mode: initialStep.mode,
             state: .ready,
-            remainingSeconds: focusDuration,
-            totalDuration: focusDuration,
+            remainingSeconds: initialStep.duration,
+            totalDuration: initialStep.duration,
             startUptime: nil,
             elapsedBeforeStart: 0,
-            savedAt: Date()
+            savedAt: Date(),
+            sequenceIndex: currentStepIndex
         )
+
+        // Persist sanitized settings if necessary
+        try? persistence.saveTimerSettings(timerSettings)
     }
 
     // MARK: - State Management
@@ -82,18 +106,29 @@ class TimerEngine: TimerEngineProtocol {
             )
         }
 
+        rebuildFlowSteps(resetIndex: false)
+
+        guard !flowSteps.isEmpty else {
+            throw TimerError.invalidStateTransition(
+                from: currentData.state,
+                to: .running
+            )
+        }
+
         // Capture monotonic start time
         let startUptime = ProcessInfo.processInfo.systemUptime
 
-        // Update state
+        // Update state using the current step duration
+        let step = flowSteps[currentStepIndex]
         currentData = TimerData(
-            mode: currentData.mode,
+            mode: step.mode,
             state: .running,
-            remainingSeconds: currentData.remainingSeconds,
-            totalDuration: currentData.totalDuration,
+            remainingSeconds: currentData.currentRemaining(),
+            totalDuration: step.duration,
             startUptime: startUptime,
             elapsedBeforeStart: currentData.elapsedBeforeStart,
-            savedAt: Date()
+            savedAt: Date(),
+            sequenceIndex: currentStepIndex
         )
 
         // Start timer
@@ -135,14 +170,16 @@ class TimerEngine: TimerEngineProtocol {
         notifications.cancelNotification(identifier: Self.notificationIdentifier)
 
         // Update state
+        let step = flowSteps[currentStepIndex]
         currentData = TimerData(
-            mode: currentData.mode,
+            mode: step.mode,
             state: .paused,
-            remainingSeconds: currentData.remainingSeconds,
-            totalDuration: currentData.totalDuration,
+            remainingSeconds: currentData.currentRemaining(),
+            totalDuration: step.duration,
             startUptime: nil,
             elapsedBeforeStart: elapsed,
-            savedAt: Date()
+            savedAt: Date(),
+            sequenceIndex: currentStepIndex
         )
 
         // Publish state change
@@ -169,14 +206,16 @@ class TimerEngine: TimerEngineProtocol {
         let startUptime = ProcessInfo.processInfo.systemUptime
 
         // Update state
+        let step = flowSteps[currentStepIndex]
         currentData = TimerData(
-            mode: currentData.mode,
+            mode: step.mode,
             state: .running,
-            remainingSeconds: currentData.remainingSeconds,
-            totalDuration: currentData.totalDuration,
+            remainingSeconds: currentData.currentRemaining(),
+            totalDuration: step.duration,
             startUptime: startUptime,
             elapsedBeforeStart: currentData.elapsedBeforeStart,
-            savedAt: Date()
+            savedAt: Date(),
+            sequenceIndex: currentStepIndex
         )
 
         // Restart timer
@@ -207,33 +246,15 @@ class TimerEngine: TimerEngineProtocol {
         // Cancel notifications
         notifications.cancelNotification(identifier: Self.notificationIdentifier)
 
-        // Always reset back to focus mode with full configured duration
-        let duration = timerSettings.duration(for: .focus)
+        rebuildFlowSteps(resetIndex: true)
 
-        // Reset to ready state with full duration
-        currentData = TimerData(
-            mode: .focus,
-            state: .ready,
-            remainingSeconds: duration,
-            totalDuration: duration,
-            startUptime: nil,
-            elapsedBeforeStart: 0,
-            savedAt: Date()
-        )
-
-        // Publish state change
-        stateSubject.send(.ready)
-
-        // Publish tick to update UI display time
-        tickSubject.send(duration)
+        // Reset to ready state with the first step duration
+        transitionToReadyStep(at: currentStepIndex)
 
         // End Live Activity
         if #available(iOS 16.1, *) {
             endLiveActivity()
         }
-
-        // Auto-save
-        saveState()
     }
 
     func switchMode(to mode: TimerMode) {
@@ -243,28 +264,15 @@ class TimerEngine: TimerEngineProtocol {
         // Cancel notifications
         notifications.cancelNotification(identifier: Self.notificationIdentifier)
 
-        // Get duration from settings
-        let duration = timerSettings.duration(for: mode)
+        rebuildFlowSteps(resetIndex: false)
 
-        // Switch mode and reset
-        currentData = TimerData(
-            mode: mode,
-            state: .ready,
-            remainingSeconds: duration,
-            totalDuration: duration,
-            startUptime: nil,
-            elapsedBeforeStart: 0,
-            savedAt: Date()
-        )
+        if let targetIndex = flowSteps.firstIndex(where: { $0.mode == mode }) {
+            currentStepIndex = targetIndex
+        } else {
+            currentStepIndex = 0
+        }
 
-        // Publish tick to update UI display time after mode switch
-        tickSubject.send(duration)
-
-        // Publish state change
-        stateSubject.send(.ready)
-
-        // Auto-save
-        saveState()
+        transitionToReadyStep(at: currentStepIndex)
     }
 
     // MARK: - Persistence
@@ -281,8 +289,26 @@ class TimerEngine: TimerEngineProtocol {
             return false
         }
 
-        // Restore state
-        currentData = savedData
+        rebuildFlowSteps(resetIndex: false)
+
+        if flowSteps.isEmpty {
+            return false
+        }
+
+        currentStepIndex = min(savedData.sequenceIndex, flowSteps.count - 1)
+        let step = flowSteps[currentStepIndex]
+
+        // Restore state with the current flow step duration
+        currentData = TimerData(
+            mode: step.mode,
+            state: savedData.state,
+            remainingSeconds: min(savedData.remainingSeconds, step.duration),
+            totalDuration: step.duration,
+            startUptime: savedData.startUptime,
+            elapsedBeforeStart: min(savedData.elapsedBeforeStart, step.duration),
+            savedAt: savedData.savedAt,
+            sequenceIndex: currentStepIndex
+        )
 
         // If was running, don't auto-resume (user must manually resume)
         // But keep the elapsed time
@@ -291,11 +317,12 @@ class TimerEngine: TimerEngineProtocol {
             currentData = TimerData(
                 mode: currentData.mode,
                 state: .paused,
-                remainingSeconds: currentData.remainingSeconds,
+                remainingSeconds: currentData.currentRemaining(),
                 totalDuration: currentData.totalDuration,
                 startUptime: nil,
                 elapsedBeforeStart: elapsed,
-                savedAt: Date()
+                savedAt: Date(),
+                sequenceIndex: currentStepIndex
             )
         }
 
@@ -339,10 +366,11 @@ class TimerEngine: TimerEngineProtocol {
             mode: currentData.mode,
             state: currentData.state,
             remainingSeconds: remaining,
-            totalDuration: currentData.totalDuration,
+            totalDuration: flowSteps[currentStepIndex].duration,
             startUptime: currentData.startUptime,
             elapsedBeforeStart: currentData.elapsedBeforeStart,
-            savedAt: Date()
+            savedAt: Date(),
+            sequenceIndex: currentStepIndex
         )
 
         // Update Live Activity
@@ -360,22 +388,25 @@ class TimerEngine: TimerEngineProtocol {
         // Stop timer
         stopTimer()
 
-        // Use the configured duration for this run
-        let duration = currentData.totalDuration
+        guard !flowSteps.isEmpty else { return }
+
+        let completedStep = flowSteps[currentStepIndex]
+        let duration = completedStep.duration
 
         // Update state to completed
         currentData = TimerData(
-            mode: currentData.mode,
+            mode: completedStep.mode,
             state: .completed,
             remainingSeconds: 0,
             totalDuration: duration,
             startUptime: nil,
             elapsedBeforeStart: duration,
-            savedAt: Date()
+            savedAt: Date(),
+            sequenceIndex: currentStepIndex
         )
 
         // Record session if focus mode
-        if currentData.mode == .focus {
+        if completedStep.kind == .focus {
             sessionManager.recordCompletedSession()
         }
 
@@ -387,43 +418,86 @@ class TimerEngine: TimerEngineProtocol {
             endLiveActivity()
         }
 
-        // Auto-save
+        // Auto-save current completed state
         saveState()
 
-        // Auto-switch to rest mode if focus just completed
-        if currentData.mode == .focus, let restMode = timerSettings.autoRestMode.timerMode {
-            // Delay to allow UI to show completion briefly, then start rest automatically
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
-                guard let self else { return }
+        let completedIndex = currentStepIndex
 
-                // Ensure we are still in the completed focus state before auto-switching
-                guard self.currentData.mode == .focus,
-                      self.currentData.state == .completed else {
-                    return
-                }
+        // After a short delay, move to the next step in the flow.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
+            guard let self else { return }
 
-                self.switchMode(to: restMode)
+            // Ensure we are still on the same completed step before advancing.
+            guard self.currentData.state == .completed,
+                  self.currentStepIndex == completedIndex else {
+                return
+            }
 
+            self.rebuildFlowSteps(resetIndex: false)
+
+            guard !self.flowSteps.isEmpty else { return }
+
+            let nextIndex = self.normalizedIndex(completedIndex + 1)
+            self.transitionToReadyStep(at: nextIndex)
+
+            let nextStep = self.flowSteps[self.currentStepIndex]
+            if nextStep.kind == .rest {
                 do {
                     try self.start()
                 } catch {
                     print("Failed to auto-start rest session: \(error)")
                 }
             }
-        } else if currentData.mode != .focus {
-            // After rest finishes, return to focus mode ready state
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
-                guard let self else { return }
-
-                // Only switch if we are still on a completed rest
-                guard self.currentData.state == .completed,
-                      self.currentData.mode != .focus else {
-                    return
-                }
-
-                self.switchMode(to: .focus)
-            }
         }
+    }
+
+    private func rebuildFlowSteps(resetIndex: Bool) {
+        timerSettings.flow.ensureMinimumCycle()
+        timerSettings.alignBaseDurationsWithFlow()
+
+        flowSteps = timerSettings.flow.steps
+        if flowSteps.isEmpty {
+            let fallbackCycle = FocusCycleConfiguration(focusDuration: timerSettings.focusDuration)
+            flowSteps = fallbackCycle.sequenceSteps
+            timerSettings.flow = TimerFlowConfiguration(cycles: [fallbackCycle])
+        }
+
+        if resetIndex {
+            currentStepIndex = 0
+        } else if currentStepIndex >= flowSteps.count {
+            currentStepIndex = flowSteps.isEmpty ? 0 : currentStepIndex % flowSteps.count
+        }
+    }
+
+    private func normalizedIndex(_ index: Int) -> Int {
+        guard !flowSteps.isEmpty else { return 0 }
+        var value = index % flowSteps.count
+        if value < 0 {
+            value += flowSteps.count
+        }
+        return value
+    }
+
+    private func transitionToReadyStep(at index: Int) {
+        guard !flowSteps.isEmpty else { return }
+
+        currentStepIndex = normalizedIndex(index)
+        let step = flowSteps[currentStepIndex]
+
+        currentData = TimerData(
+            mode: step.mode,
+            state: .ready,
+            remainingSeconds: step.duration,
+            totalDuration: step.duration,
+            startUptime: nil,
+            elapsedBeforeStart: 0,
+            savedAt: Date(),
+            sequenceIndex: currentStepIndex
+        )
+
+        tickSubject.send(step.duration)
+        stateSubject.send(.ready)
+        saveState()
     }
 
     private func scheduleCompletionNotification() {
@@ -452,35 +526,47 @@ class TimerEngine: TimerEngineProtocol {
         }
 
         timerSettings = newSettings
+        rebuildFlowSteps(resetIndex: false)
 
         // Save settings
         do {
-            try persistence.saveTimerSettings(newSettings)
+            try persistence.saveTimerSettings(timerSettings)
         } catch {
             print("Failed to save timer settings: \(error)")
         }
 
-        // If timer is NOT running or paused, update the remaining time
+        // If timer is NOT running or paused, update the remaining time by resetting the current step
         if currentData.state == .ready || currentData.state == .completed {
-            let newDuration = timerSettings.duration(for: currentData.mode)
+            transitionToReadyStep(at: currentStepIndex)
+        } else {
+            // Timer is active; adjust durations in-place without interrupting state
+            guard !flowSteps.isEmpty else { return }
+
+            let step = flowSteps[currentStepIndex]
+            let remaining = min(currentData.currentRemaining(), step.duration)
+            let elapsedBeforeStart = min(currentData.elapsedBeforeStart, step.duration)
+
             currentData = TimerData(
-                mode: currentData.mode,
-                state: .ready,
-                remainingSeconds: newDuration,
-                totalDuration: newDuration,
-                startUptime: nil,
-                elapsedBeforeStart: 0,
-                savedAt: Date()
+                mode: step.mode,
+                state: currentData.state,
+                remainingSeconds: remaining,
+                totalDuration: step.duration,
+                startUptime: currentData.startUptime,
+                elapsedBeforeStart: elapsedBeforeStart,
+                savedAt: Date(),
+                sequenceIndex: currentStepIndex
             )
 
-            // Publish state change (in case we moved from completed to ready)
-            stateSubject.send(.ready)
-
-            // Publish tick to update UI
-            tickSubject.send(newDuration)
-
-            // Save state
+            tickSubject.send(currentData.currentRemaining())
             saveState()
+
+            // Refresh outbound systems to reflect the new duration
+            if currentData.state == .running {
+                scheduleCompletionNotification()
+                if #available(iOS 16.1, *) {
+                    updateLiveActivity()
+                }
+            }
         }
     }
 

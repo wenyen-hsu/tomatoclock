@@ -32,6 +32,9 @@ struct TimerData: Codable {
     /// Timestamp when this state was saved (for staleness detection)
     let savedAt: Date
 
+    /// Index of the current step inside the repeating custom flow.
+    let sequenceIndex: Int
+
     /// Default state: Focus mode, ready, 25:00 remaining
     static var `default`: TimerData {
         return TimerData(
@@ -41,7 +44,8 @@ struct TimerData: Codable {
             totalDuration: 25 * 60,
             startUptime: nil,
             elapsedBeforeStart: 0,
-            savedAt: Date()
+            savedAt: Date(),
+            sequenceIndex: 0
         )
     }
 }
@@ -55,6 +59,7 @@ extension TimerData {
         case startUptime
         case elapsedBeforeStart
         case savedAt
+        case sequenceIndex
     }
 
     init(from decoder: Decoder) throws {
@@ -68,6 +73,7 @@ extension TimerData {
         startUptime = try container.decodeIfPresent(TimeInterval.self, forKey: .startUptime)
         elapsedBeforeStart = try container.decode(TimeInterval.self, forKey: .elapsedBeforeStart)
         savedAt = try container.decode(Date.self, forKey: .savedAt)
+        sequenceIndex = try container.decodeIfPresent(Int.self, forKey: .sequenceIndex) ?? 0
     }
 
     func encode(to encoder: Encoder) throws {
@@ -80,6 +86,7 @@ extension TimerData {
         try container.encodeIfPresent(startUptime, forKey: .startUptime)
         try container.encode(elapsedBeforeStart, forKey: .elapsedBeforeStart)
         try container.encode(savedAt, forKey: .savedAt)
+        try container.encode(sequenceIndex, forKey: .sequenceIndex)
     }
 
     /// Current elapsed time (considering running state)

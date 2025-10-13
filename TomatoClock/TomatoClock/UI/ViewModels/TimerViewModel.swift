@@ -41,6 +41,9 @@ class TimerViewModel: ObservableObject {
     /// Can reset button be tapped?
     @Published var canReset: Bool = false
 
+    /// Configurable focus/rest flow driving the timer sequence
+    @Published var flowConfiguration: TimerFlowConfiguration = .default
+
     // MARK: - Private Properties
 
     let timerEngine: TimerEngineProtocol
@@ -59,6 +62,7 @@ class TimerViewModel: ObservableObject {
         self.timerEngine = timerEngine
         self.sessionManager = sessionManager
         self.notificationService = notificationService
+        self.flowConfiguration = timerEngine.timerSettings.flow
     }
 
     // MARK: - Setup
@@ -145,12 +149,33 @@ class TimerViewModel: ObservableObject {
         timerEngine.updateSettings(settings)
         // Update display time if changed
         displayTime = Self.formatTime(timerEngine.currentData.currentRemaining())
+        flowConfiguration = timerEngine.timerSettings.flow
     }
 
-    func updateRestMode(_ mode: RestMode) {
+    func applyFlowConfiguration(_ flow: TimerFlowConfiguration) {
+        var sanitizedFlow = flow
+        sanitizedFlow.ensureMinimumCycle()
+
         var updatedSettings = timerEngine.timerSettings
-        updatedSettings.autoRestMode = mode
+        updatedSettings.flow = sanitizedFlow
+        updatedSettings.alignBaseDurationsWithFlow()
+
         timerEngine.updateSettings(updatedSettings)
+
+        flowConfiguration = timerEngine.timerSettings.flow
+        displayTime = Self.formatTime(timerEngine.currentData.currentRemaining())
+    }
+
+    /// Current step index inside the repeating flow sequence.
+    var currentFlowStepIndex: Int {
+        timerEngine.currentData.sequenceIndex
+    }
+
+    /// Identifier of the active step in the flow (for UI highlighting).
+    var activeFlowStepID: UUID? {
+        let steps = flowConfiguration.steps
+        guard steps.indices.contains(currentFlowStepIndex) else { return nil }
+        return steps[currentFlowStepIndex].id
     }
 
     // MARK: - Lifecycle
@@ -167,6 +192,7 @@ class TimerViewModel: ObservableObject {
         currentMode = data.mode
         currentState = data.state
         displayTime = Self.formatTime(data.currentRemaining())
+        flowConfiguration = timerEngine.timerSettings.flow
         updateButtonStates()
     }
 
