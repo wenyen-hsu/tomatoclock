@@ -1,0 +1,24 @@
+/* App Branding */
+"app.title" = "Pomodoro Timer";
+"app.tagline" = "Stay focused, get things done";
+
+/* Timer Modes */
+"mode.focus" = "Focus";
+"mode.shortBreak" = "Short Break";
+"mode.longBreak" = "Long Break";
+
+/* Timer Labels */
+"label.focusTime" = "FOCUS TIME";
+"label.breakTime" = "BREAK TIME";
+
+/* Notifications */
+"notification.focus.title" = "Focus Complete!";
+"notification.focus.body" = "Great work! Time for a 5-minute break.";
+"notification.break.title" = "Break Over!";
+"notification.break.body" = "Ready to focus again?";
+
+/* Session Tracking */
+"session.completed" = "SESSIONS COMPLETED";
+
+/* Footer */
+"footer.info" = "Work 25 min • Short Break 5 min • Long Break 15 min";
