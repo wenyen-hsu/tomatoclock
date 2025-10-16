@@ -10,24 +10,56 @@ import ActivityKit
 
 /// Attributes for Timer Live Activity (displayed in Dynamic Island and Lock Screen)
 struct TimerActivityAttributes: ActivityAttributes {
-    /// Static content that doesn't change during the activity
+    /// Dynamic content that updates during the activity
     public struct ContentState: Codable, Hashable {
         /// Remaining time in seconds
         var remainingSeconds: TimeInterval
 
-        /// Timer mode (focus, short break, long break)
-        var mode: TimerMode
-
-        /// Timer state (running, paused, completed)
-        var state: TimerState
+        /// Total duration of current timer phase
+        var totalDuration: TimeInterval
 
         /// Display time string (MM:SS)
         var displayTime: String
 
-        /// End date for countdown (used by Dynamic Island)
+        /// End date for countdown (used by Dynamic Island for automatic countdown)
         var timerEndDate: Date
+
+        /// Mode identifier ("focus", "shortBreak", "longBreak")
+        var modeIdentifier: String
+
+        /// Mode display name ("Focus", "Short Break", "Long Break")
+        var modeDisplayName: String
+
+        /// Mode label ("FOCUS TIME", "BREAK TIME")
+        var modeLabel: String
+
+        /// State identifier ("ready", "running", "paused", "completed")
+        var stateIdentifier: String
     }
 
     /// Session count (static across activity lifetime)
     var sessionCount: Int
+}
+
+// MARK: - Convenience Initializers
+
+extension TimerActivityAttributes.ContentState {
+    /// Convenience initializer that accepts TimerMode and TimerState enums
+    init(
+        remainingSeconds: TimeInterval,
+        totalDuration: TimeInterval,
+        mode: TimerMode,
+        state: TimerState,
+        displayTime: String,
+        timerEndDate: Date
+    ) {
+        self.remainingSeconds = remainingSeconds
+        self.totalDuration = totalDuration
+        self.modeIdentifier = mode.rawValue
+        self.modeDisplayName = mode.displayName
+        self.modeLabel = mode.label
+        self.stateIdentifier = state.rawValue
+        self.displayTime = displayTime
+        self.timerEndDate = timerEndDate
+    }
 }

@@ -42,6 +42,8 @@ class NotificationService: NotificationServiceProtocol {
 
     func scheduleCompletionNotification(
         for mode: TimerMode,
+        nextMode: TimerMode?,
+        settings: TimerSettings?,
         at fireDate: Date,
         identifier: String
     ) throws {
@@ -51,7 +53,26 @@ class NotificationService: NotificationServiceProtocol {
         switch mode {
         case .focus:
             content.title = "Focus Complete!"
-            content.body = "Great work! Time for a 5-minute break."
+            if let nextMode = nextMode, let settings = settings {
+                let breakDuration: TimeInterval
+                switch nextMode {
+                case .shortBreak:
+                    breakDuration = settings.shortBreakDuration
+                case .longBreak:
+                    breakDuration = settings.longBreakDuration
+                default:
+                    breakDuration = 0
+                }
+                
+                if breakDuration > 0 {
+                    let minutes = Int(breakDuration / 60)
+                    content.body = "Great work! Time for a \(minutes)-minute break."
+                } else {
+                    content.body = "Great work! Ready for the next session?"
+                }
+            } else {
+                content.body = "Great work! Time for a break."
+            }
 
         case .shortBreak:
             content.title = "Break Complete!"

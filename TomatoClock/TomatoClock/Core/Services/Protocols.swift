@@ -106,6 +106,8 @@ protocol NotificationServiceProtocol: AnyObject {
     ///   - identifier: Unique identifier for cancellation
     func scheduleCompletionNotification(
         for mode: TimerMode,
+        nextMode: TimerMode?,
+        settings: TimerSettings?,
         at fireDate: Date,
         identifier: String
     ) throws

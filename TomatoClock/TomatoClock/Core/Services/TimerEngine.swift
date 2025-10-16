@@ -437,16 +437,17 @@ class TimerEngine: TimerEngineProtocol {
 
             guard !self.flowSteps.isEmpty else { return }
 
-            let nextIndex = self.normalizedIndex(completedIndex + 1)
-            self.transitionToReadyStep(at: nextIndex)
+            let nextRawIndex = completedIndex + 1
+            guard nextRawIndex < self.flowSteps.count else {
+                return
+            }
 
-            let nextStep = self.flowSteps[self.currentStepIndex]
-            if nextStep.kind == .rest {
-                do {
-                    try self.start()
-                } catch {
-                    print("Failed to auto-start rest session: \(error)")
-                }
+            self.transitionToReadyStep(at: nextRawIndex)
+
+            do {
+                try self.start()
+            } catch {
+                print("Failed to auto-start next session: \(error)")
             }
         }
     }
@@ -504,9 +505,15 @@ class TimerEngine: TimerEngineProtocol {
         let remaining = currentData.currentRemaining()
         let fireDate = Date().addingTimeInterval(remaining)
 
+        // Determine the next mode for the notification content
+        let nextIndex = normalizedIndex(currentStepIndex + 1)
+        let nextMode = flowSteps.indices.contains(nextIndex) ? flowSteps[nextIndex].mode : nil
+
         do {
             try notifications.scheduleCompletionNotification(
                 for: currentData.mode,
+                nextMode: nextMode,
+                settings: timerSettings,
                 at: fireDate,
                 identifier: Self.notificationIdentifier
             )
@@ -589,8 +596,10 @@ class TimerEngine: TimerEngineProtocol {
             sessionCount: sessionManager.currentProgress.completedCount
         )
 
+        // Use the convenience initializer with TimerMode and TimerState enums
         let contentState = TimerActivityAttributes.ContentState(
             remainingSeconds: remaining,
+            totalDuration: currentData.totalDuration,
             mode: currentData.mode,
             state: currentData.state,
             displayTime: remaining.formatAsMMSS(),
@@ -617,8 +626,10 @@ class TimerEngine: TimerEngineProtocol {
         let remaining = currentData.currentRemaining()
         let timerEndDate = Date().addingTimeInterval(remaining)
 
+        // Use the convenience initializer with TimerMode and TimerState enums
         let contentState = TimerActivityAttributes.ContentState(
             remainingSeconds: remaining,
+            totalDuration: currentData.totalDuration,
             mode: currentData.mode,
             state: currentData.state,
             displayTime: remaining.formatAsMMSS(),

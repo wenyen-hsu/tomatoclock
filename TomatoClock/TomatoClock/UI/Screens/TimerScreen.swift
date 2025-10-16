@@ -115,6 +115,7 @@ struct TimerScreen: View {
                 }
             )
         }
+        .preferredColorScheme(.light)  // Force light mode to fix dark mode color issues
         .onAppear {
             viewModel.setup()
         }
