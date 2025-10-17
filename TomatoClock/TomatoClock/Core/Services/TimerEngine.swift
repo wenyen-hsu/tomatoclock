@@ -413,11 +413,6 @@ class TimerEngine: TimerEngineProtocol {
         // Publish state change
         stateSubject.send(.completed)
 
-        // Refresh Live Activity to reflect completion, keeping it alive for next session
-        if #available(iOS 16.1, *) {
-            refreshLiveActivityForCurrentState()
-        }
-
         // Auto-save current completed state
         saveState()
 
@@ -439,6 +434,9 @@ class TimerEngine: TimerEngineProtocol {
 
             let nextRawIndex = completedIndex + 1
             guard nextRawIndex < self.flowSteps.count else {
+                if #available(iOS 16.1, *) {
+                    self.endLiveActivity()
+                }
                 return
             }
 
