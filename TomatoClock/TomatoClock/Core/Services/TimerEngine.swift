@@ -413,9 +413,9 @@ class TimerEngine: TimerEngineProtocol {
         // Publish state change
         stateSubject.send(.completed)
 
-        // Update Live Activity to show completion (don't end it - will continue to next session)
+        // Refresh Live Activity to reflect completion, keeping it alive for next session
         if #available(iOS 16.1, *) {
-            updateLiveActivity()
+            refreshLiveActivityForCurrentState()
         }
 
         // Auto-save current completed state
@@ -444,11 +444,38 @@ class TimerEngine: TimerEngineProtocol {
 
             self.transitionToReadyStep(at: nextRawIndex)
 
+            if #available(iOS 16.1, *) {
+                self.refreshLiveActivityForCurrentState()
+            }
+
             do {
                 try self.start()
             } catch {
                 print("Failed to auto-start next session: \(error)")
             }
+        }
+    }
+
+    @available(iOS 16.1, *)
+    private func refreshLiveActivityForCurrentState() {
+        let remaining = currentData.currentRemaining()
+        let timerEndDate = Date().addingTimeInterval(remaining)
+
+        let contentState = TimerActivityAttributes.ContentState(
+            remainingSeconds: remaining,
+            totalDuration: currentData.totalDuration,
+            mode: currentData.mode,
+            state: currentData.state,
+            displayTime: remaining.formatAsMMSS(),
+            timerEndDate: timerEndDate
+        )
+
+        if let activity = currentActivity {
+            Task {
+                await activity.update(.init(state: contentState, staleDate: nil))
+            }
+        } else {
+            startLiveActivity()
         }
     }
 
@@ -606,49 +633,25 @@ class TimerEngine: TimerEngineProtocol {
 
         // If we already have an active Live Activity, check if we can update it
         if let activity = currentActivity {
-            // Check if attributes have changed (sessionCount)
-            // ActivityKit attributes cannot be changed after creation, so we need to end and restart
-            if activity.attributes.sessionCount != currentSessionCount {
-                print("🔄 [Live Activity] Session count changed (\(activity.attributes.sessionCount) → \(currentSessionCount)), restarting Activity")
-                endLiveActivity()
-                // Continue to create new activity below
-            } else {
-                // Attributes unchanged, just update content
-                print("🔄 [Live Activity] Updating existing Live Activity")
-                print("   - Mode: \(currentData.mode.displayName)")
-                print("   - Remaining: \(remaining.formatAsMMSS())")
+            // Attributes unchanged, just update content
+            print("🔄 [Live Activity] Updating existing Live Activity")
+            print("   - Mode: \(currentData.mode.displayName)")
+            print("   - Remaining: \(remaining.formatAsMMSS())")
 
-                Task {
-                    await activity.update(.init(state: contentState, staleDate: nil))
-                    print("✅ [Live Activity] Updated successfully!")
-                }
-                return
+            Task {
+                await activity.update(.init(state: contentState, staleDate: nil))
+                print("✅ [Live Activity] Updated successfully!")
             }
+            return
         }
 
-        // Create new Live Activity
-        print("🔵 [Live Activity] Starting new Live Activity...")
-        print("   - Mode: \(currentData.mode.displayName)")
-        print("   - Remaining: \(remaining.formatAsMMSS())")
-        print("   - Session: #\(currentSessionCount + 1)")
-
-        let attributes = TimerActivityAttributes(
-            sessionCount: currentSessionCount
-        )
-
-        do {
-            let activity = try Activity<TimerActivityAttributes>.request(
-                attributes: attributes,
-                content: .init(state: contentState, staleDate: nil),
-                pushType: nil
+        // Create new Live Activity (no existing activity to end)
+        Task { [weak self] in
+            guard let self else { return }
+            await self.createNewLiveActivity(
+                contentState: contentState,
+                sessionCount: currentSessionCount
             )
-            currentActivity = activity
-            print("✅ [Live Activity] Successfully started!")
-            print("   - Activity ID: \(activity.id)")
-            print("💡 [Live Activity] Put app in background to see Dynamic Island")
-        } catch {
-            print("❌ [Live Activity] Failed to start: \(error)")
-            print("   - Error details: \(error.localizedDescription)")
         }
     }
 
@@ -694,6 +697,49 @@ class TimerEngine: TimerEngineProtocol {
             await activity.end(nil, dismissalPolicy: .immediate)
             currentActivity = nil
             print("✅ [Live Activity] Successfully ended")
+        }
+    }
+
+    @available(iOS 16.1, *)
+    private func endLiveActivityAsync() async {
+        guard let activity = currentActivity else {
+            return
+        }
+
+        print("🔵 [Live Activity] Ending Live Activity (async)...")
+
+        await activity.end(nil, dismissalPolicy: .immediate)
+        currentActivity = nil
+        print("✅ [Live Activity] Successfully ended")
+    }
+
+    @available(iOS 16.1, *)
+    private func createNewLiveActivity(
+        contentState: TimerActivityAttributes.ContentState,
+        sessionCount: Int
+    ) async {
+        print("🔵 [Live Activity] Creating new Live Activity...")
+        print("   - Mode: \(contentState.modeDisplayName)")
+        print("   - Remaining: \(contentState.displayTime)")
+        print("   - Session: #\(sessionCount + 1)")
+
+        let attributes = TimerActivityAttributes(
+            sessionCount: sessionCount
+        )
+
+        do {
+            let activity = try Activity<TimerActivityAttributes>.request(
+                attributes: attributes,
+                content: .init(state: contentState, staleDate: nil),
+                pushType: nil
+            )
+            currentActivity = activity
+            print("✅ [Live Activity] Successfully started!")
+            print("   - Activity ID: \(activity.id)")
+            print("💡 [Live Activity] Put app in background to see Dynamic Island")
+        } catch {
+            print("❌ [Live Activity] Failed to start: \(error)")
+            print("   - Error details: \(error.localizedDescription)")
         }
     }
 }

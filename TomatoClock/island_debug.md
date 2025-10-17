@@ -303,6 +303,137 @@ private func startLiveActivity() {
 
 ---
 
+### 問題 10: Live Activity 重建時的競態條件
+
+**現象**:
+實施問題 9 的修正後，Focus → Break 切換時 Dynamic Island 仍然消失，需要重新進入 app 按暫停再開始才會顯示。
+
+**診斷**:
+在 `TimerEngine.swift` 的 `startLiveActivity()` 方法中（lines 607-627）：
+
+```swift
+if activity.attributes.sessionCount != currentSessionCount {
+    print("🔄 [Live Activity] Session count changed, restarting Activity")
+    endLiveActivity()  // ❌ 這是異步的，但函數立即返回！
+    // Continue to create new activity below - Line 614
+}
+
+// Create new Live Activity
+// Line 629 開始創建新 Activity - 但舊的可能還沒結束！
+```
+
+`endLiveActivity()` 方法（lines 682-695）：
+
+```swift
+@available(iOS 16.1, *)
+private func endLiveActivity() {
+    guard let activity = currentActivity else { return }
+
+    print("🔵 [Live Activity] Ending Live Activity...")
+
+    Task {  // ❌ 異步執行！
+        await activity.end(nil, dismissalPolicy: .immediate)
+        currentActivity = nil  // 在函數返回後才執行
+    }
+}
+```
+
+**競態條件流程**:
+1. Focus 完成 → sessionCount 增加
+2. 調用 `startLiveActivity()` 開始 Break
+3. 檢測到 sessionCount 改變（Focus → Break）
+4. 調用 `endLiveActivity()` - 啟動異步 Task 但**立即返回**
+5. 代碼**立即繼續**到 line 629 創建新 Activity
+6. 與此同時，第 4 步的異步 Task 最終完成，設置 `currentActivity = nil`
+7. 如果第 6 步在第 5 步之後發生，新的 Activity 引用就會丟失
+8. Dynamic Island 消失，因為 `currentActivity` 被設為 `nil`
+
+**解決方案**:
+重構代碼以正確處理異步操作順序：
+
+1. **添加異步版本的 endLiveActivity**：
+```swift
+@available(iOS 16.1, *)
+private func endLiveActivityAsync() async {
+    guard let activity = currentActivity else { return }
+
+    print("🔵 [Live Activity] Ending Live Activity (async)...")
+
+    await activity.end(nil, dismissalPolicy: .immediate)  // 等待完成
+    currentActivity = nil
+    print("✅ [Live Activity] Successfully ended")
+}
+```
+
+2. **添加異步的創建 Activity 方法**：
+```swift
+@available(iOS 16.1, *)
+private func createNewLiveActivity(
+    contentState: TimerActivityAttributes.ContentState,
+    sessionCount: Int
+) async {
+    print("🔵 [Live Activity] Creating new Live Activity...")
+    print("   - Mode: \(contentState.mode.displayName)")
+    print("   - Remaining: \(contentState.displayTime)")
+    print("   - Session: #\(sessionCount + 1)")
+
+    let attributes = TimerActivityAttributes(sessionCount: sessionCount)
+
+    do {
+        let activity = try Activity<TimerActivityAttributes>.request(
+            attributes: attributes,
+            content: .init(state: contentState, staleDate: nil),
+            pushType: nil
+        )
+        currentActivity = activity
+        print("✅ [Live Activity] Successfully started!")
+        print("   - Activity ID: \(activity.id)")
+    } catch {
+        print("❌ [Live Activity] Failed to start: \(error)")
+    }
+}
+```
+
+3. **在 startLiveActivity 中正確使用異步順序**：
+```swift
+if activity.attributes.sessionCount != currentSessionCount {
+    print("🔄 [Live Activity] Session count changed, restarting Activity")
+
+    // 在 Task 中按順序執行異步操作
+    Task { [weak self] in
+        guard let self else { return }
+
+        // 等待舊 Activity 完全結束
+        await self.endLiveActivityAsync()
+
+        // 現在創建新 Activity
+        await self.createNewLiveActivity(
+            contentState: contentState,
+            sessionCount: currentSessionCount
+        )
+    }
+    return
+}
+```
+
+**修改文件**:
+- `TomatoClock/Core/Services/TimerEngine.swift` (lines 607-650: startLiveActivity)
+- `TomatoClock/Core/Services/TimerEngine.swift` (lines 697-738: 新增兩個異步方法)
+
+**關鍵改進**:
+- ✅ `endLiveActivityAsync()` 是真正的異步函數，調用者可以 `await` 它
+- ✅ `createNewLiveActivity()` 也是異步的，確保操作順序
+- ✅ 在 Task 中按順序執行：先 await 結束，再 await 創建
+- ✅ 使用 `[weak self]` 避免記憶體洩漏
+- ✅ 保留原來的 `endLiveActivity()` 用於 pause 等不需要重建的場景
+
+**行為說明**:
+- **Focus → Break**: 先等待舊 Activity 完全結束，再創建新的，避免競態條件
+- **Break → Focus**: 無縫更新（不需要重建）
+- **Pause**: 立即結束 Activity（不需要等待）
+
+---
+
 ## 最終配置清單
 
 ### Widget Extension Info.plist (IslandInfo.plist)
