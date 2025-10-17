@@ -23,19 +23,8 @@ struct TimerLiveActivityWidget: Widget {
                 .activityBackgroundTint(.clear)
                 .activitySystemActionForegroundColor(.white)
         } dynamicIsland: { context in
-            TimerDynamicIsland(context: context)
-                .widgetURL(URL(string: "tomatoclock://timer"))
-        }
-    }
-}
-
-private struct TimerDynamicIsland: View {
-    let context: ActivityViewContext<TimerActivityAttributes>
-
-    private var snapshot: TimerIslandSnapshot { TimerIslandSnapshot(context: context) }
-
-    var body: some View {
-        DynamicIsland {
+            let snapshot = TimerIslandSnapshot(context: context)
+            return DynamicIsland {
             DynamicIslandExpandedRegion(.leading) {
                 ModeBadge(snapshot: snapshot)
             }
@@ -93,6 +82,7 @@ private struct TimerDynamicIsland: View {
                 .foregroundStyle(snapshot.accentColor)
         }
         .keylineTint(snapshot.accentColor)
+        }
     }
 }
 
@@ -252,46 +242,4 @@ private struct TimerIslandSnapshot {
     func timerText() -> Text {
         Text(context.state.timerEndDate, style: .timer)
     }
-}
-
-#Preview("Focus - Running") {
-    let attributes = TimerActivityAttributes(sessionCount: 2)
-    let state = TimerActivityAttributes.ContentState(
-        remainingSeconds: 15 * 60,
-        totalDuration: 25 * 60,
-        displayTime: "15:00",
-        timerEndDate: .now.addingTimeInterval(15 * 60),
-        modeIdentifier: "focus",
-        modeDisplayName: "Focus",
-        modeLabel: "FOCUS TIME",
-        stateIdentifier: "running"
-    )
-
-    return TimerLockScreenView(
-        context: ActivityViewContext(
-            attributes: attributes,
-            state: state
-        )
-    )
-}
-
-#Preview("Break - Paused") {
-    let attributes = TimerActivityAttributes(sessionCount: 4)
-    let state = TimerActivityAttributes.ContentState(
-        remainingSeconds: 2 * 60,
-        totalDuration: 5 * 60,
-        displayTime: "02:00",
-        timerEndDate: .now.addingTimeInterval(2 * 60),
-        modeIdentifier: "shortBreak",
-        modeDisplayName: "Short Break",
-        modeLabel: "BREAK TIME",
-        stateIdentifier: "paused"
-    )
-
-    return TimerLockScreenView(
-        context: ActivityViewContext(
-            attributes: attributes,
-            state: state
-        )
-    )
 }

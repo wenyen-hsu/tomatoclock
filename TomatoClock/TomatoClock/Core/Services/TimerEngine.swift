@@ -413,9 +413,9 @@ class TimerEngine: TimerEngineProtocol {
         // Publish state change
         stateSubject.send(.completed)
 
-        // End Live Activity
+        // Update Live Activity to show completion (don't end it - will continue to next session)
         if #available(iOS 16.1, *) {
-            endLiveActivity()
+            updateLiveActivity()
         }
 
         // Auto-save current completed state
@@ -581,20 +581,18 @@ class TimerEngine: TimerEngineProtocol {
 
     @available(iOS 16.1, *)
     private func startLiveActivity() {
-        // End any existing activity first
-        endLiveActivity()
+        // Check authorization
+        let authInfo = ActivityAuthorizationInfo()
 
-        guard ActivityAuthorizationInfo().areActivitiesEnabled else {
-            print("Live Activities are not enabled")
+        guard authInfo.areActivitiesEnabled else {
+            print("❌ [Live Activity] Live Activities are not enabled in system settings")
+            print("💡 [Live Activity] Please enable in: Settings > TomatoClock > Live Activities")
             return
         }
 
         let remaining = currentData.currentRemaining()
         let timerEndDate = Date().addingTimeInterval(remaining)
-
-        let attributes = TimerActivityAttributes(
-            sessionCount: sessionManager.currentProgress.completedCount
-        )
+        let currentSessionCount = sessionManager.currentProgress.completedCount
 
         // Use the convenience initializer with TimerMode and TimerState enums
         let contentState = TimerActivityAttributes.ContentState(
@@ -604,6 +602,38 @@ class TimerEngine: TimerEngineProtocol {
             state: currentData.state,
             displayTime: remaining.formatAsMMSS(),
             timerEndDate: timerEndDate
+        )
+
+        // If we already have an active Live Activity, check if we can update it
+        if let activity = currentActivity {
+            // Check if attributes have changed (sessionCount)
+            // ActivityKit attributes cannot be changed after creation, so we need to end and restart
+            if activity.attributes.sessionCount != currentSessionCount {
+                print("🔄 [Live Activity] Session count changed (\(activity.attributes.sessionCount) → \(currentSessionCount)), restarting Activity")
+                endLiveActivity()
+                // Continue to create new activity below
+            } else {
+                // Attributes unchanged, just update content
+                print("🔄 [Live Activity] Updating existing Live Activity")
+                print("   - Mode: \(currentData.mode.displayName)")
+                print("   - Remaining: \(remaining.formatAsMMSS())")
+
+                Task {
+                    await activity.update(.init(state: contentState, staleDate: nil))
+                    print("✅ [Live Activity] Updated successfully!")
+                }
+                return
+            }
+        }
+
+        // Create new Live Activity
+        print("🔵 [Live Activity] Starting new Live Activity...")
+        print("   - Mode: \(currentData.mode.displayName)")
+        print("   - Remaining: \(remaining.formatAsMMSS())")
+        print("   - Session: #\(currentSessionCount + 1)")
+
+        let attributes = TimerActivityAttributes(
+            sessionCount: currentSessionCount
         )
 
         do {
@@ -613,15 +643,21 @@ class TimerEngine: TimerEngineProtocol {
                 pushType: nil
             )
             currentActivity = activity
-            print("✅ Live Activity started: \(activity.id)")
+            print("✅ [Live Activity] Successfully started!")
+            print("   - Activity ID: \(activity.id)")
+            print("💡 [Live Activity] Put app in background to see Dynamic Island")
         } catch {
-            print("❌ Failed to start Live Activity: \(error)")
+            print("❌ [Live Activity] Failed to start: \(error)")
+            print("   - Error details: \(error.localizedDescription)")
         }
     }
 
     @available(iOS 16.1, *)
     private func updateLiveActivity() {
-        guard let activity = currentActivity else { return }
+        guard let activity = currentActivity else {
+            // This is normal - don't log every tick
+            return
+        }
 
         let remaining = currentData.currentRemaining()
         let timerEndDate = Date().addingTimeInterval(remaining)
@@ -636,6 +672,11 @@ class TimerEngine: TimerEngineProtocol {
             timerEndDate: timerEndDate
         )
 
+        // Only log every 10 seconds to avoid console spam
+        if Int(remaining) % 10 == 0 {
+            print("🔄 [Live Activity] Updating... Remaining: \(remaining.formatAsMMSS())")
+        }
+
         Task {
             await activity.update(.init(state: contentState, staleDate: nil))
         }
@@ -643,12 +684,16 @@ class TimerEngine: TimerEngineProtocol {
 
     @available(iOS 16.1, *)
     private func endLiveActivity() {
-        guard let activity = currentActivity else { return }
+        guard let activity = currentActivity else {
+            return
+        }
+
+        print("🔵 [Live Activity] Ending Live Activity...")
 
         Task {
             await activity.end(nil, dismissalPolicy: .immediate)
             currentActivity = nil
-            print("✅ Live Activity ended")
+            print("✅ [Live Activity] Successfully ended")
         }
     }
 }

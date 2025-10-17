@@ -6,7 +6,20 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		28CEC0E92EA148F6007420DF /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 28CEC0E82EA148F6007420DF /* WidgetKit.framework */; };
+		28CEC0EB2EA148F6007420DF /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 28CEC0EA2EA148F6007420DF /* SwiftUI.framework */; };
+		28CEC0FA2EA148F7007420DF /* tomatoclockislandExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 28CEC0E62EA148F6007420DF /* tomatoclockislandExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
+		28CEC0F82EA148F7007420DF /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 28CEFCB12E9CBD8E008FD72A /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 28CEC0E52EA148F6007420DF;
+			remoteInfo = tomatoclockislandExtension;
+		};
 		28CEFCC92E9CBD8F008FD72A /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 28CEFCB12E9CBD8E008FD72A /* Project object */;
@@ -23,15 +36,51 @@
 		};
 /* End PBXContainerItemProxy section */
 
+/* Begin PBXCopyFilesBuildPhase section */
+		28CEC0FB2EA148F7007420DF /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				28CEC0FA2EA148F7007420DF /* tomatoclockislandExtension.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
+		28CEC0E62EA148F6007420DF /* tomatoclockislandExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = tomatoclockislandExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		28CEC0E82EA148F6007420DF /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
+		28CEC0EA2EA148F6007420DF /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
 		28CEFCB92E9CBD8E008FD72A /* TomatoClock.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TomatoClock.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		28CEFCC82E9CBD8F008FD72A /* TomatoClockTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TomatoClockTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		28CEFCD22E9CBD8F008FD72A /* TomatoClockUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TomatoClockUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		28CEC1142EA14CB3007420DF /* Exceptions for "TomatoClock" folder in "tomatoclockislandExtension" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Core/Models/TimerMode.swift,
+				Core/Models/TimerState.swift,
+			);
+			target = 28CEC0E52EA148F6007420DF /* tomatoclockislandExtension */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
+		28CEC0EC2EA148F6007420DF /* tomatoclockisland */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = tomatoclockisland;
+			sourceTree = "<group>";
+		};
 		28CEFCBB2E9CBD8E008FD72A /* TomatoClock */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				28CEC1142EA14CB3007420DF /* Exceptions for "TomatoClock" folder in "tomatoclockislandExtension" target */,
+			);
 			path = TomatoClock;
 			sourceTree = "<group>";
 		};
@@ -48,6 +97,15 @@
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		28CEC0E32EA148F6007420DF /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				28CEC0EB2EA148F6007420DF /* SwiftUI.framework in Frameworks */,
+				28CEC0E92EA148F6007420DF /* WidgetKit.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		28CEFCB62E9CBD8E008FD72A /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -72,12 +130,23 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		28CEC0E72EA148F6007420DF /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				28CEC0E82EA148F6007420DF /* WidgetKit.framework */,
+				28CEC0EA2EA148F6007420DF /* SwiftUI.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 		28CEFCB02E9CBD8E008FD72A = {
 			isa = PBXGroup;
 			children = (
 				28CEFCBB2E9CBD8E008FD72A /* TomatoClock */,
 				28CEFCCB2E9CBD8F008FD72A /* TomatoClockTests */,
 				28CEFCD52E9CBD8F008FD72A /* TomatoClockUITests */,
+				28CEC0EC2EA148F6007420DF /* tomatoclockisland */,
+				28CEC0E72EA148F6007420DF /* Frameworks */,
 				28CEFCBA2E9CBD8E008FD72A /* Products */,
 			);
 			sourceTree = "<group>";
@@ -88,6 +157,7 @@
 				28CEFCB92E9CBD8E008FD72A /* TomatoClock.app */,
 				28CEFCC82E9CBD8F008FD72A /* TomatoClockTests.xctest */,
 				28CEFCD22E9CBD8F008FD72A /* TomatoClockUITests.xctest */,
+				28CEC0E62EA148F6007420DF /* tomatoclockislandExtension.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -95,6 +165,28 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		28CEC0E52EA148F6007420DF /* tomatoclockislandExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 28CEC0FF2EA148F7007420DF /* Build configuration list for PBXNativeTarget "tomatoclockislandExtension" */;
+			buildPhases = (
+				28CEC0E22EA148F6007420DF /* Sources */,
+				28CEC0E32EA148F6007420DF /* Frameworks */,
+				28CEC0E42EA148F6007420DF /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				28CEC0EC2EA148F6007420DF /* tomatoclockisland */,
+			);
+			name = tomatoclockislandExtension;
+			packageProductDependencies = (
+			);
+			productName = tomatoclockislandExtension;
+			productReference = 28CEC0E62EA148F6007420DF /* tomatoclockislandExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 		28CEFCB82E9CBD8E008FD72A /* TomatoClock */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 28CEFCDC2E9CBD8F008FD72A /* Build configuration list for PBXNativeTarget "TomatoClock" */;
@@ -102,10 +194,12 @@
 				28CEFCB52E9CBD8E008FD72A /* Sources */,
 				28CEFCB62E9CBD8E008FD72A /* Frameworks */,
 				28CEFCB72E9CBD8E008FD72A /* Resources */,
+				28CEC0FB2EA148F7007420DF /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				28CEC0F92EA148F7007420DF /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				28CEFCBB2E9CBD8E008FD72A /* TomatoClock */,
@@ -173,6 +267,9 @@
 				LastSwiftUpdateCheck = 2600;
 				LastUpgradeCheck = 2600;
 				TargetAttributes = {
+					28CEC0E52EA148F6007420DF = {
+						CreatedOnToolsVersion = 26.0;
+					};
 					28CEFCB82E9CBD8E008FD72A = {
 						CreatedOnToolsVersion = 26.0;
 					};
@@ -203,11 +300,19 @@
 				28CEFCB82E9CBD8E008FD72A /* TomatoClock */,
 				28CEFCC72E9CBD8F008FD72A /* TomatoClockTests */,
 				28CEFCD12E9CBD8F008FD72A /* TomatoClockUITests */,
+				28CEC0E52EA148F6007420DF /* tomatoclockislandExtension */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		28CEC0E42EA148F6007420DF /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		28CEFCB72E9CBD8E008FD72A /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -232,6 +337,13 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		28CEC0E22EA148F6007420DF /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		28CEFCB52E9CBD8E008FD72A /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -256,6 +368,11 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
+		28CEC0F92EA148F7007420DF /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 28CEC0E52EA148F6007420DF /* tomatoclockislandExtension */;
+			targetProxy = 28CEC0F82EA148F7007420DF /* PBXContainerItemProxy */;
+		};
 		28CEFCCA2E9CBD8F008FD72A /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = 28CEFCB82E9CBD8E008FD72A /* TomatoClock */;
@@ -269,6 +386,70 @@
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
+		28CEC0FC2EA148F7007420DF /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_ENTITLEMENTS = tomatoclockisland/tomatoclockisland.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = QSJ2X775UA;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = tomatoclockisland/IslandInfo.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = tomatoclockisland;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 16.1;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "tomato-clock.TomatoClock.tomatoclockisland";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		28CEC0FD2EA148F7007420DF /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_ENTITLEMENTS = tomatoclockisland/tomatoclockisland.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = QSJ2X775UA;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = tomatoclockisland/IslandInfo.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = tomatoclockisland;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 16.1;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "tomato-clock.TomatoClock.tomatoclockisland";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
 		28CEFCDA2E9CBD8F008FD72A /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -395,12 +576,15 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = TomatoClock/TomatoClock.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = QSJ2X775UA;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.lifestyle";
+				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
+				INFOPLIST_KEY_NSSupportsLiveActivitiesOnDynamicIsland = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -428,12 +612,15 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = TomatoClock/TomatoClock.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = QSJ2X775UA;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.lifestyle";
+				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
+				INFOPLIST_KEY_NSSupportsLiveActivitiesOnDynamicIsland = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -543,6 +730,15 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		28CEC0FF2EA148F7007420DF /* Build configuration list for PBXNativeTarget "tomatoclockislandExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				28CEC0FC2EA148F7007420DF /* Debug */,
+				28CEC0FD2EA148F7007420DF /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		28CEFCB42E9CBD8E008FD72A /* Build configuration list for PBXProject "TomatoClock" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
