@@ -460,6 +460,7 @@ class TimerEngine: TimerEngineProtocol {
     private func refreshLiveActivityForCurrentState() {
         let remaining = currentData.currentRemaining()
         let timerEndDate = Date().addingTimeInterval(remaining)
+        let sessionNumber = sessionNumberForDisplay()
 
         let contentState = TimerActivityAttributes.ContentState(
             remainingSeconds: remaining,
@@ -467,7 +468,8 @@ class TimerEngine: TimerEngineProtocol {
             mode: currentData.mode,
             state: currentData.state,
             displayTime: remaining.formatAsMMSS(),
-            timerEndDate: timerEndDate
+            timerEndDate: timerEndDate,
+            sessionNumber: sessionNumber
         )
 
         if let activity = currentActivity {
@@ -620,6 +622,7 @@ class TimerEngine: TimerEngineProtocol {
         let remaining = currentData.currentRemaining()
         let timerEndDate = Date().addingTimeInterval(remaining)
         let currentSessionCount = sessionManager.currentProgress.completedCount
+        let sessionNumber = sessionNumberForDisplay()
 
         // Use the convenience initializer with TimerMode and TimerState enums
         let contentState = TimerActivityAttributes.ContentState(
@@ -628,7 +631,8 @@ class TimerEngine: TimerEngineProtocol {
             mode: currentData.mode,
             state: currentData.state,
             displayTime: remaining.formatAsMMSS(),
-            timerEndDate: timerEndDate
+            timerEndDate: timerEndDate,
+            sessionNumber: sessionNumber
         )
 
         // If we already have an active Live Activity, check if we can update it
@@ -666,13 +670,15 @@ class TimerEngine: TimerEngineProtocol {
         let timerEndDate = Date().addingTimeInterval(remaining)
 
         // Use the convenience initializer with TimerMode and TimerState enums
+        // Session number is already embedded via startLiveActivity/refreshLiveActivityForCurrentState
         let contentState = TimerActivityAttributes.ContentState(
             remainingSeconds: remaining,
             totalDuration: currentData.totalDuration,
             mode: currentData.mode,
             state: currentData.state,
             displayTime: remaining.formatAsMMSS(),
-            timerEndDate: timerEndDate
+            timerEndDate: timerEndDate,
+            sessionNumber: sessionNumberForDisplay()
         )
 
         // Only log every 10 seconds to avoid console spam
@@ -721,7 +727,7 @@ class TimerEngine: TimerEngineProtocol {
         print("🔵 [Live Activity] Creating new Live Activity...")
         print("   - Mode: \(contentState.modeDisplayName)")
         print("   - Remaining: \(contentState.displayTime)")
-        print("   - Session: #\(sessionCount + 1)")
+        print("   - Session: #\(contentState.sessionNumber)")
 
         let attributes = TimerActivityAttributes(
             sessionCount: sessionCount
@@ -741,5 +747,17 @@ class TimerEngine: TimerEngineProtocol {
             print("❌ [Live Activity] Failed to start: \(error)")
             print("   - Error details: \(error.localizedDescription)")
         }
+    }
+
+    private func sessionNumberForDisplay() -> Int {
+        guard !flowSteps.isEmpty else { return 1 }
+
+        let clampedIndex = normalizedIndex(currentStepIndex)
+        if clampedIndex < flowSteps.count {
+            let focusCompleted = flowSteps[...clampedIndex].filter { $0.kind == .focus }.count
+            return max(1, focusCompleted)
+        }
+
+        return 1
     }
 }

@@ -92,27 +92,29 @@ private struct TimerLockScreenView: View {
     private var snapshot: TimerIslandSnapshot { TimerIslandSnapshot(context: context) }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: 10) {
             HStack {
                 ModeBadge(snapshot: snapshot)
                 Spacer()
                 StatusBadge(snapshot: snapshot)
             }
 
-            HStack(alignment: .lastTextBaseline, spacing: 12) {
+            HStack(alignment: .lastTextBaseline, spacing: 10) {
                 // Use automatic countdown timer for real-time updates
                 snapshot.timerText()
-                    .font(.system(size: 56, weight: .bold, design: .rounded))
+                    .font(.system(size: 42, weight: .bold, design: .rounded))
                     .monospacedDigit()
                     .foregroundStyle(.primary)
+                    .minimumScaleFactor(0.9)
                 Text(snapshot.statusLine)
-                    .font(.title3)
+                    .font(.subheadline)
                     .foregroundStyle(.secondary)
+                    .minimumScaleFactor(0.9)
             }
 
             ProgressView(value: snapshot.elapsed, total: snapshot.total) {
                 Text(snapshot.statusLine)
-                    .font(.subheadline)
+                    .font(.caption)
                     .foregroundStyle(.secondary)
             }
             .progressViewStyle(.linear)
@@ -120,20 +122,20 @@ private struct TimerLockScreenView: View {
 
             HStack {
                 Label("Session #\(snapshot.sessionNumber)", systemImage: "flame")
-                    .font(.subheadline)
+                    .font(.caption)
                     .foregroundStyle(.secondary)
                 Spacer()
                 Text(snapshot.modeDescription)
-                    .font(.subheadline)
+                    .font(.caption)
                     .foregroundStyle(.secondary)
             }
         }
-        .padding(20)
+        .padding(14)
         .background(
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
                 .fill(.ultraThinMaterial)
         )
-        .padding(.horizontal)
+        .padding(.horizontal, 10)
         .widgetURL(URL(string: "tomatoclock://timer"))
     }
 }
@@ -234,7 +236,7 @@ private struct TimerIslandSnapshot {
         return "ACTIVE"
     }
 
-    var sessionNumber: Int { max(1, context.attributes.sessionCount + 1) }
+    var sessionNumber: Int { max(1, context.state.sessionNumber) }
 
     var isPaused: Bool { stateIdentifier == "paused" }
     var isCompleted: Bool { stateIdentifier == "completed" }

@@ -35,6 +35,9 @@ struct TimerActivityAttributes: ActivityAttributes {
 
         /// State identifier ("ready", "running", "paused", "completed")
         var stateIdentifier: String
+
+        /// 1-based session number displayed in the widget
+        var sessionNumber: Int
     }
 
     /// Session count (static across activity lifetime)
@@ -51,7 +54,8 @@ extension TimerActivityAttributes.ContentState {
         mode: TimerMode,
         state: TimerState,
         displayTime: String,
-        timerEndDate: Date
+        timerEndDate: Date,
+        sessionNumber: Int
     ) {
         self.remainingSeconds = remainingSeconds
         self.totalDuration = totalDuration
@@ -61,5 +65,6 @@ extension TimerActivityAttributes.ContentState {
         self.stateIdentifier = state.rawValue
         self.displayTime = displayTime
         self.timerEndDate = timerEndDate
+        self.sessionNumber = sessionNumber
     }
 }

@@ -23,7 +23,8 @@ struct LiveActivityTests {
             mode: .focus,
             state: .running,
             displayTime: "25:00",
-            timerEndDate: Date().addingTimeInterval(1500)
+            timerEndDate: Date().addingTimeInterval(1500),
+            sessionNumber: 1
         )
 
         // When
@@ -58,7 +59,8 @@ struct LiveActivityTests {
             mode: mode,
             state: state,
             displayTime: "25:00",
-            timerEndDate: Date().addingTimeInterval(1500)
+            timerEndDate: Date().addingTimeInterval(1500),
+            sessionNumber: 1
         )
 
         // Then
@@ -81,7 +83,8 @@ struct LiveActivityTests {
             mode: mode,
             state: state,
             displayTime: "05:00",
-            timerEndDate: Date().addingTimeInterval(300)
+            timerEndDate: Date().addingTimeInterval(300),
+            sessionNumber: 1
         )
 
         // Then
@@ -104,7 +107,8 @@ struct LiveActivityTests {
             mode: mode,
             state: state,
             displayTime: "00:00",
-            timerEndDate: Date()
+            timerEndDate: Date(),
+            sessionNumber: 7
         )
 
         // Then
@@ -125,7 +129,8 @@ struct LiveActivityTests {
             mode: .focus,
             state: .completed,
             displayTime: "00:00",
-            timerEndDate: Date()
+            timerEndDate: Date(),
+            sessionNumber: 2
         )
 
         // Then
@@ -143,7 +148,8 @@ struct LiveActivityTests {
             mode: .focus,
             state: .running,
             displayTime: "25:00",
-            timerEndDate: Date().addingTimeInterval(-10)
+            timerEndDate: Date().addingTimeInterval(-10),
+            sessionNumber: 1
         )
 
         // Then - Should not crash, just store the value
@@ -160,7 +166,8 @@ struct LiveActivityTests {
             mode: .focus,
             state: .running,
             displayTime: "166:39",
-            timerEndDate: Date().addingTimeInterval(longDuration)
+            timerEndDate: Date().addingTimeInterval(longDuration),
+            sessionNumber: 1
         )
 
         // Then
@@ -179,7 +186,8 @@ struct LiveActivityTests {
             mode: .focus,
             state: .ready,
             displayTime: "25:00",
-            timerEndDate: Date().addingTimeInterval(1500)
+            timerEndDate: Date().addingTimeInterval(1500),
+            sessionNumber: 1
         )
 
         // Then
@@ -196,7 +204,8 @@ struct LiveActivityTests {
             mode: .focus,
             state: .running,
             displayTime: "25:00",
-            timerEndDate: date
+            timerEndDate: date,
+            sessionNumber: 1
         )
 
         let contentState2 = TimerActivityAttributes.ContentState(
@@ -205,7 +214,8 @@ struct LiveActivityTests {
             mode: .focus,
             state: .running,
             displayTime: "25:00",
-            timerEndDate: date
+            timerEndDate: date,
+            sessionNumber: 1
         )
 
         // Then - Same values should have same hash
