@@ -81,6 +81,25 @@ struct SettingsView: View {
                         .font(.caption)
                         .foregroundColor(.gray)
                 }
+
+                // Focus Shield Section (iOS 15+ only)
+                if #available(iOS 15.0, *) {
+                    Section(header: Text("進階功能")) {
+                        NavigationLink(destination: FocusShieldSettingsView()) {
+                            HStack {
+                                Image(systemName: "shield.fill")
+                                    .foregroundColor(.blue)
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text("專注防護")
+                                        .fontWeight(.medium)
+                                    Text("在專注時間屏蔽 App")
+                                        .font(.caption)
+                                        .foregroundColor(.gray)
+                                }
+                            }
+                        }
+                    }
+                }
             }
             .navigationTitle("設定")
             .navigationBarTitleDisplayMode(.inline)

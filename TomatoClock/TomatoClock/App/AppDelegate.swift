@@ -32,6 +32,11 @@ class AppDelegate: NSObject, UIApplicationDelegate {
             }
         }
 
+        // ✅ Focus Shield: Sync shield state with persisted timer on app launch
+        if #available(iOS 15.0, *) {
+            FocusShieldService.shared.syncShieldStateWithTimer()
+        }
+
         return true
     }
 
@@ -48,6 +53,11 @@ class AppDelegate: NSObject, UIApplicationDelegate {
     func applicationWillEnterForeground(_ application: UIApplication) {
         // Refresh state when returning to foreground
         print("App entering foreground")
+
+        // ✅ Focus Shield: Sync shield state when returning from background
+        if #available(iOS 15.0, *) {
+            FocusShieldService.shared.syncShieldStateWithTimer()
+        }
     }
 }
 

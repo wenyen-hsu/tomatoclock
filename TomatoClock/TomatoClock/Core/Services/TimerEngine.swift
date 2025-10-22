@@ -150,6 +150,11 @@ class TimerEngine: TimerEngineProtocol {
 
         // Auto-save
         saveState()
+
+        // ✅ Focus Shield: Enable if starting Focus mode
+        if #available(iOS 15.0, *), currentData.mode == .focus {
+            FocusShieldService.shared.enableShield()
+        }
     }
 
     func pause() throws {
@@ -192,6 +197,11 @@ class TimerEngine: TimerEngineProtocol {
 
         // Auto-save
         saveState()
+
+        // ✅ Focus Shield: Disable when paused
+        if #available(iOS 15.0, *) {
+            FocusShieldService.shared.disableShield()
+        }
     }
 
     func resume() throws {
@@ -237,6 +247,11 @@ class TimerEngine: TimerEngineProtocol {
 
         // Auto-save
         saveState()
+
+        // ✅ Focus Shield: Enable if resuming Focus mode
+        if #available(iOS 15.0, *), currentData.mode == .focus {
+            FocusShieldService.shared.enableShield()
+        }
     }
 
     func reset() {
@@ -254,6 +269,11 @@ class TimerEngine: TimerEngineProtocol {
         // End Live Activity
         if #available(iOS 16.1, *) {
             endLiveActivity()
+        }
+
+        // ✅ Focus Shield: Disable when reset
+        if #available(iOS 15.0, *) {
+            FocusShieldService.shared.disableShield()
         }
     }
 
@@ -415,6 +435,12 @@ class TimerEngine: TimerEngineProtocol {
 
         // Auto-save current completed state
         saveState()
+
+        // ✅ Focus Shield: Disable when any session completes
+        // Next session's start() will re-enable if needed
+        if #available(iOS 15.0, *) {
+            FocusShieldService.shared.disableShield()
+        }
 
         let completedIndex = currentStepIndex
 

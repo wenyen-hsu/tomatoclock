@@ -6,5 +6,7 @@
 	<array>
 		<string>group.tomato-clock.TomatoClock</string>
 	</array>
+	<key>com.apple.developer.family-controls</key>
+	<true/>
 </dict>
 </plist>
